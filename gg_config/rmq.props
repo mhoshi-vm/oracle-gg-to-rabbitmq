@@ -1,0 +1,15 @@
+gg.handlerlist=jms
+gg.handler.jms.type=jms
+
+# Payload Formatting
+gg.handler.jms.format=json
+gg.handler.jms.format.includePrimaryKeys=true
+gg.handler.jms.format.jsonOpType=true
+
+# JNDI Routing pointing to the Exchange
+gg.handler.jms.ConnectionFactoryName=RMQConnectionFactory
+gg.handler.jms.DestinationName=MyRabbitExchange
+gg.handler.jms.JNDIProperties=/u01/app/ogg/config/jndi.properties
+
+# Classpath for the mounted JMS Jars
+gg.classpath=/u01/app/ogg/jars/*

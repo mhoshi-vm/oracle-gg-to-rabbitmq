@@ -1,0 +1,41 @@
+{
+  "users": [
+    {"name": "ggadmin", "password": "ggadmin123", "tags": "administrator"}
+  ],
+  "vhosts": [
+    {"name": "/"}
+  ],
+  "permissions": [
+    {"user": "ggadmin", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*"}
+  ],
+  "exchanges": [
+    {
+      "name": "MyRabbitExchange",
+      "vhost": "/",
+      "type": "x-jms-topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "MyStreamQueue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {"x-queue-type": "stream"}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "MyRabbitExchange",
+      "vhost": "/",
+      "destination": "MyStreamQueue",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    }
+  ]
+}
