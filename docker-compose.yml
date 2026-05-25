@@ -7,6 +7,11 @@ services:
     container_name: oracle-db
     environment:
       - ORACLE_PWD=OraclePassword1!
+      - ENABLE_ARCHIVELOG=true       # Automatically enable ArchiveLog mode
+      - ENABLE_FORCE_LOGGING=true    # Automatically enable Force Logging
+    volumes:
+      # Mount the setup script so it runs on initial DB creation
+      - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/setup/01_setup_cdc.sql
     networks:
       - gg_network
 

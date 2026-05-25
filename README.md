@@ -1,6 +1,13 @@
+- Only works on Linux
+- Uses commercial Oracle DAA, make sure no license violation
+
+# Download RabbitMQ JMS Client and dependencies
+
 ```
 mvn clean dependency:copy-dependencies -DoutputDirectory=./gg_jars -DincludeScope=runtime
 ```
+
+# Setup Oracle DB
 
 Login to Oracle DB 
 
