@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  # Init container to fix the volume permissions for the 'ogg' user (UID 54321)
+  init-trails-volume:
+    image: alpine:latest
+    container_name: init-trails-volume
+    command: sh -c "chown -R 54321:54321 /u02/trails && chmod -R 775 /u02/trails"
+    volumes:
+      - shared_trails:/u02/trails
+    networks:
+      - gg_network
   # 1. Source Database: Oracle DB Free
   oracledb:
 #    image: container-registry.oracle.com/database/free:latest
@@ -43,7 +52,10 @@ services:
     volumes:
       - shared_trails:/u02/trails # Shared folder to dump the trail files
     depends_on:
-      - oracledb
+      oracledb:
+        condition: service_started
+      init-trails-volume:
+        condition: service_completed_successfully
     networks:
       - gg_network
 
@@ -63,7 +75,10 @@ services:
       - ./gg_config:/u02/config
       - shared_trails:/u02/trails # Shared folder to read the trail files
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_started
+      init-trails-volume:
+        condition: service_completed_successfully
     networks:
       - gg_network
 
