@@ -6,9 +6,9 @@ gg.handler.jms.format=json
 gg.handler.jms.format.includePrimaryKeys=true
 gg.handler.jms.format.jsonOpType=true
 
-# JNDI Routing pointing to the Exchange
+# Routing configurations pointing to the JNDI properties
 gg.handler.jms.ConnectionFactoryName=RMQConnectionFactory
-gg.handler.jms.DestinationName=MyRabbitExchange
+gg.handler.jms.DestinationName=amq.topic
 gg.handler.jms.JNDIProperties=/u01/app/ogg/config/jndi.properties
 
 # Classpath for the mounted JMS Jars

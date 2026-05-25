@@ -10,9 +10,9 @@
   ],
   "exchanges": [
     {
-      "name": "MyRabbitExchange",
+      "name": "amq.topic",
       "vhost": "/",
-      "type": "x-jms-topic",
+      "type": "topic",
       "durable": true,
       "auto_delete": false,
       "internal": false,
@@ -30,7 +30,7 @@
   ],
   "bindings": [
     {
-      "source": "MyRabbitExchange",
+      "source": "amq.topic",
       "vhost": "/",
       "destination": "MyStreamQueue",
       "destination_type": "queue",

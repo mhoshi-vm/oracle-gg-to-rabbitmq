@@ -7,8 +7,6 @@ services:
     container_name: oracle-db
     environment:
       - ORACLE_PWD=OraclePassword1!
-    ports:
-      - "1521:1521"
     networks:
       - gg_network
 
@@ -17,8 +15,6 @@ services:
     image: rabbitmq:4.3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"   # AMQP
-      - "5552:5552"   # Stream Protocol
       - "15672:15672" # Management UI
     volumes:
       - ./enabled_plugins:/etc/rabbitmq/enabled_plugins
@@ -34,13 +30,12 @@ services:
     environment:
       - OGG_ADMIN_PWD=GgAdminPassword1!
     ports:
-      - "9000:9000"
-      - "9001:9001"
-      - "9002:9002"
-      - "9003:9003"
+      - "8080:8080"
+      - "8443:8443"
     volumes:
-      - ./gg_jars:/u01/app/ogg/jars
-      - ./gg_config:/u01/app/ogg/config
+      # Mounting custom files to /u02 as requested by the new image standards
+      - ./gg_jars:/u02/jars
+      - ./gg_config:/u02/config
     depends_on:
       - oracledb
       - rabbitmq
