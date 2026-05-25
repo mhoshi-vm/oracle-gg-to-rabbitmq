@@ -1,16 +1,16 @@
 gg.handlerlist=jms
 gg.handler.jms.type=jms
 
-# Payload Formatting (Updated for OGG 23ai)
+# Payload Formatting
 gg.handler.jms.format=json
 gg.handler.jms.format.metaColumnsTemplate=${optype},${primarykeys}
 
-# Routing configurations (Updated to camelCase)
+# Routing configurations (Updated for 23ai templates)
 gg.handler.jms.connectionFactory=RMQConnectionFactory
-gg.handler.jms.destination=amq.topic
+gg.handler.jms.destinationTemplate=amq.topic
 
 # =================================================================
-# JNDI Properties (Embedded directly into the handler file)
+# JNDI Properties
 # =================================================================
 java.naming.factory.initial=com.rabbitmq.jms.admin.RMQObjectFactory
 java.naming.provider.url=amqp://ggadmin:ggadmin123@rabbitmq:5672
