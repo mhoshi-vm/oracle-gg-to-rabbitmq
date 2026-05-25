@@ -112,3 +112,17 @@ EXIT;
 ```
 
 In the Admin UI, click **EXT_01** → **Statistics**. The insert should appear as a captured operation.
+
+# Configure Oracle DAA
+
+```
+$ docker exec -it gg-daa ls -l /u02/trails
+total 4
+-rw-r----- 1 ogg ogg 1350 May 25 14:11 lt000000000
+```
+
+![img.png](img.png)
+
+![img_1.png](img_1.png)
+
+![img_2.png](img_2.png)

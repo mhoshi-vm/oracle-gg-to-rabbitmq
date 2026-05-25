@@ -11,6 +11,6 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>3.6.0</version> </dependency>
+            <version>2.13.0</version> </dependency>
     </dependencies>
 </project>
