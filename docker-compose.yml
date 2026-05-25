@@ -3,15 +3,16 @@ version: '3.8'
 services:
   # 1. Source Database: Oracle DB Free
   oracledb:
-    image: container-registry.oracle.com/database/free:latest
-    container_name: oracle-db
+#    image: container-registry.oracle.com/database/free:latest
+    image: container-registry.oracle.com/database/free@sha256:8a8084193724b95bc62247e3af4218b357e4f172c78925551b2181dbe2566232
+    container_name: oracledb
     environment:
       - ORACLE_PWD=OraclePassword1!
       - ENABLE_ARCHIVELOG=true       # Automatically enable ArchiveLog mode
       - ENABLE_FORCE_LOGGING=true    # Automatically enable Force Logging
     volumes:
       # Mount the setup script so it runs on initial DB creation
-      - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/setup/01_setup_cdc.sql
+      - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/startup/01_setup_cdc.sql
     networks:
       - gg_network
 
@@ -30,7 +31,8 @@ services:
 
   # NEW: The Capture Engine (GoldenGate for Oracle Database)
   gg-capture:
-    image: container-registry.oracle.com/goldengate/goldengate-oracle-free:latest
+#    image: container-registry.oracle.com/goldengate/goldengate-oracle-free:latest
+    image: container-registry.oracle.com/goldengate/goldengate-oracle-free@sha256:b550427da48f269e4c6746ed434539ffc834c70386d177f08ae8470176cfc4c1
     platform: linux/amd64
     container_name: gg-capture
     environment:
@@ -47,7 +49,8 @@ services:
 
   # EXISTING: The Delivery Engine (GoldenGate for DAA / RabbitMQ)
   gg-delivery:
-    image: container-registry.oracle.com/goldengate/goldengate-distributed-apps-and-analytics:latest
+#    image: container-registry.oracle.com/goldengate/goldengate-distributed-apps-and-analytics:latest
+    image: container-registry.oracle.com/goldengate/goldengate-distributed-apps-and-analytics@sha256:4ef5c7eb0f57b49351624749d92e5267c79baab59fdd169a6d0256b3957f4503
     platform: linux/amd64
     container_name: gg-daa
     environment:
