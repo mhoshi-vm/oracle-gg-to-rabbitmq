@@ -40,8 +40,9 @@ services:
 
   # NEW: The Capture Engine (GoldenGate for Oracle Database)
   gg-capture:
+    # Does not work with free
 #    image: container-registry.oracle.com/goldengate/goldengate-oracle-free:latest
-    image: container-registry.oracle.com/goldengate/goldengate-oracle-free@sha256:b550427da48f269e4c6746ed434539ffc834c70386d177f08ae8470176cfc4c1
+    image: container-registry.oracle.com/goldengate/goldengate-oracle:latest
     platform: linux/amd64
     container_name: gg-capture
     environment:

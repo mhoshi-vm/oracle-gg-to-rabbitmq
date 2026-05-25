@@ -113,16 +113,80 @@ EXIT;
 
 In the Admin UI, click **EXT_01** → **Statistics**. The insert should appear as a captured operation.
 
-# Configure Oracle DAA
+---
+
+## Configure Oracle DAA
+
+The DAA (Delivery) engine reads the trail files written by GG Capture and publishes CDC events to RabbitMQ via the JMS handler.
+
+### 1. Verify trail files are visible
+
+Before configuring the Replicat, confirm the trail files written by `gg-capture` are accessible inside the `gg-daa` container via the shared volume:
+
+```bash
+docker exec -it gg-daa ls -l /u02/trails
+```
+
+Expected output (at least one trail file starting with `lt`):
 
 ```
-$ docker exec -it gg-daa ls -l /u02/trails
 total 4
 -rw-r----- 1 ogg ogg 1350 May 25 14:11 lt000000000
 ```
 
-![img.png](img.png)
+---
 
-![img_1.png](img_1.png)
+### 2. Log in to the DAA Admin UI
 
-![img_2.png](img_2.png)
+Open `https://localhost:8443` in your browser and bypass the self-signed certificate warning.
+
+| Field    | Value           |
+|----------|-----------------|
+| Username | `oggadmin`      |
+| Password | `Welcome#12345` |
+
+---
+
+### 3. Create the Replicat
+
+1. On the landing page, click **Administration Service**.
+2. Open the hamburger menu → **Overview**.
+3. Click **+** (Add Replicat) → select **Classic Replicat** → click **Next**.
+4. Fill in the options:
+
+   | Field         | Value         |
+   |---------------|---------------|
+   | Process Name  | `REP_01`      |
+   | Trail Name    | `lt`          |
+   | Sub Directory | `/u02/trails` |
+
+Choose `Generic (JMS)` and `JSON Operation Format`
+
+5. Click **Next** to reach the Parameter File screen.
+6. Replace the generated content with the following:
+
+   ```
+   REPLICAT REP_01
+   TARGETDB LIBFILE libggjava.so SET property=/u02/config/rmq.props
+   MAP testuser.employees, TARGET testuser.employees;
+   ```
+
+7. Click **Create and Run**.
+
+---
+
+### 4. Verify messages are reaching RabbitMQ
+
+Open the RabbitMQ Management UI at `http://localhost:15672` (guest / guest) and navigate to **Exchanges** → `amq.topic`. Insert another row into Oracle:
+
+```bash
+docker exec -it oracledb sqlplus 'testuser/Welcome123##@//localhost:1521/FREEPDB1'
+```
+
+```sql
+INSERT INTO employees (emp_id, name, department, salary) VALUES (3, 'Carol', 'Sales', 65000);
+COMMIT;
+EXIT;
+```
+
+The message count on `amq.topic` should increment, confirming the full pipeline is working.
