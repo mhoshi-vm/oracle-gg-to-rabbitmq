@@ -1,0 +1,35 @@
+# ==========================================================
+# 1. ConnectionFactory Object
+# ==========================================================
+RMQConnectionFactory/ClassName=javax.jms.ConnectionFactory
+RMQConnectionFactory/FactoryName=com.rabbitmq.jms.admin.RMQObjectFactory
+RMQConnectionFactory/RefAddr/0/Content=jms/ConnectionFactory
+RMQConnectionFactory/RefAddr/0/Type=name
+RMQConnectionFactory/RefAddr/0/Encoding=String
+RMQConnectionFactory/RefAddr/1/Content=javax.jms.ConnectionFactory
+RMQConnectionFactory/RefAddr/1/Type=type
+RMQConnectionFactory/RefAddr/1/Encoding=String
+RMQConnectionFactory/RefAddr/2/Content=com.rabbitmq.jms.admin.RMQObjectFactory
+RMQConnectionFactory/RefAddr/2/Type=factory
+RMQConnectionFactory/RefAddr/2/Encoding=String
+RMQConnectionFactory/RefAddr/3/Content=amqp://ggadmin:ggadmin123@rabbitmq:5672
+RMQConnectionFactory/RefAddr/3/Type=uri
+RMQConnectionFactory/RefAddr/3/Encoding=String
+
+# ==========================================================
+# 2. Destination Object (Topic)
+# ==========================================================
+amq.topic/ClassName=javax.jms.Topic
+amq.topic/FactoryName=com.rabbitmq.jms.admin.RMQObjectFactory
+amq.topic/RefAddr/0/Content=jms/Topic
+amq.topic/RefAddr/0/Type=name
+amq.topic/RefAddr/0/Encoding=String
+amq.topic/RefAddr/1/Content=javax.jms.Topic
+amq.topic/RefAddr/1/Type=type
+amq.topic/RefAddr/1/Encoding=String
+amq.topic/RefAddr/2/Content=com.rabbitmq.jms.admin.RMQObjectFactory
+amq.topic/RefAddr/2/Type=factory
+amq.topic/RefAddr/2/Encoding=String
+amq.topic/RefAddr/3/Content=amq.topic
+amq.topic/RefAddr/3/Type=destinationName
+amq.topic/RefAddr/3/Encoding=String
