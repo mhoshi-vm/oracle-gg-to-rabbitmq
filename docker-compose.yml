@@ -42,7 +42,7 @@ services:
 
   # EXISTING: The Delivery Engine (GoldenGate for DAA / RabbitMQ)
   gg-delivery:
-    image: container-registry.oracle.com/goldengate/goldengate-daa:latest
+    image: container-registry.oracle.com/goldengate/goldengate-distributed-apps-and-analytics:latest
     platform: linux/amd64
     container_name: gg-daa
     environment:
