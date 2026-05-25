@@ -1,55 +1,50 @@
--- =========================================================
--- 01_setup_cdc.sql
--- Runs automatically on initial DB creation in Docker
--- =========================================================
-
 -- Disable variable substitution prompts in SQL*Plus
 SET DEFINE OFF;
 
--- Enable Minimum Supplemental Logging at the CDB level
+-- =========================================================
+-- CDB Level Configuration
+-- =========================================================
+-- Enable Minimum Supplemental Logging
 ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+-- Enable GoldenGate Replication globally
+ALTER SYSTEM SET ENABLE_GOLDENGATE_REPLICATION=TRUE SCOPE=BOTH;
+
+-- Allocate memory for the LogMiner (Fixes OGG-10556 / OGG-02024)
+ALTER SYSTEM SET STREAMS_POOL_SIZE=256M SCOPE=BOTH;
 
 -- Switch session to the Pluggable Database (FREEPDB1)
 ALTER SESSION SET CONTAINER = FREEPDB1;
 
+-- =========================================================
+-- PDB Level Configuration
+-- =========================================================
+-- Ensure replication is explicitly enabled at the PDB level too
 ALTER SYSTEM SET ENABLE_GOLDENGATE_REPLICATION=TRUE SCOPE=BOTH;
 
--- =========================================================
+-- Ensuer Minimum Supplemental Logging at the PDB level too
+ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
 -- GoldenGate Admin Setup
--- =========================================================
 CREATE USER ggadmin IDENTIFIED BY Welcome123##;
 
--- Grant standard connectivity and DBA roles
+-- Grant Standard Roles
 GRANT CONNECT, RESOURCE, DBA TO ggadmin;
+GRANT OGG_CAPTURE TO ggadmin;
+GRANT OGG_APPLY TO ggadmin;
 
--- Grant 23ai specific GoldenGate roles
-GRANT OGG_CAPTURE TO ggadmin;  -- Required for Extract
-GRANT OGG_APPLY TO ggadmin;    -- Required for Replicat
-
--- Grant explicit dictionary access (Fixes ORA-00942 on SYS.V_$INSTANCE)
+-- Grant Explicit Privileges for OCI Background Tasks
 GRANT SELECT ANY DICTIONARY TO ggadmin;
-
--- Grant explicit execution on the required Streams/Capture packages
-GRANT EXECUTE ON DBMS_XSTREAM_GG_ADM TO ggadmin;
-GRANT EXECUTE ON DBMS_CAPTURE_ADM TO ggadmin;
-
--- Grant the catalog role as a fallback for other system package queries
-GRANT EXECUTE_CATALOG_ROLE TO ggadmin;
-
--- 1. Give ggadmin explicit storage quota (Roles do not grant quota in OCI)
+GRANT SELECT ANY TRANSACTION TO ggadmin;
 ALTER USER ggadmin QUOTA UNLIMITED ON USERS;
 
--- 2. Grant explicit table creation and alteration privileges
-GRANT CREATE TABLE TO ggadmin;
-GRANT CREATE ANY TABLE TO ggadmin;
-GRANT ALTER ANY TABLE TO ggadmin;
-GRANT DROP ANY TABLE TO ggadmin;
-
--- 3. Grant explicit DML privileges for the Replicat to update checkpoints
+-- Explicit Table & System Privileges
+GRANT CREATE TABLE, CREATE ANY TABLE, ALTER ANY TABLE, DROP ANY TABLE TO ggadmin;
 GRANT SELECT ANY TABLE, INSERT ANY TABLE, UPDATE ANY TABLE, DELETE ANY TABLE TO ggadmin;
-
--- 4. Grant Flashback (required for some OGG checkpoint synchronizations)
 GRANT EXECUTE ON DBMS_FLASHBACK TO ggadmin;
+GRANT EXECUTE ON DBMS_XSTREAM_GG_ADM TO ggadmin;
+GRANT EXECUTE ON DBMS_CAPTURE_ADM TO ggadmin;
+GRANT EXECUTE_CATALOG_ROLE TO ggadmin;
 
 -- =========================================================
 -- Source Schema and Table Setup
@@ -64,7 +59,7 @@ CREATE TABLE testuser.employees (
     salary NUMBER
 );
 
--- Enable table-level supplemental logging (required for CDC)
+-- Enable table-level supplemental logging
 ALTER TABLE testuser.employees ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
 
 -- Insert a test record
