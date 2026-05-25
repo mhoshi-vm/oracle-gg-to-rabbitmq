@@ -6,10 +6,17 @@ gg.handler.jms.format=json
 gg.handler.jms.format.includePrimaryKeys=true
 gg.handler.jms.format.jsonOpType=true
 
-# Routing configurations pointing to the JNDI properties (Updated to camelCase)
+# Routing configurations
 gg.handler.jms.connectionFactory=RMQConnectionFactory
 gg.handler.jms.destination=amq.topic
-gg.handler.jms.jndiProperties=/u02/config/jndi.properties
+
+# =================================================================
+# JNDI Properties (Moved directly into the main properties file)
+# =================================================================
+java.naming.factory.initial=com.rabbitmq.jms.admin.RMQObjectFactory
+java.naming.provider.url=amqp://ggadmin:ggadmin123@rabbitmq:5672
+connectionFactoryNames=RMQConnectionFactory
+topic.amq.topic=amq.topic
 
 # Classpath for the mounted JMS Jars
 gg.classpath=/u02/jars/*

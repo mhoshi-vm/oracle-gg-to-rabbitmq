@@ -5,11 +5,9 @@ services:
   init-trails-volume:
     image: alpine:latest
     container_name: init-trails-volume
-    command: sh -c "chown -R 54321:54321 /u02/trails /u02/jars /u02/config && chmod -R 775 /u02/trails /u02/jars /u02/config"
+    command: sh -c "chown -R 54321:54321 /u02/trails  && chmod -R 775 /u02/trails"
     volumes:
       - shared_trails:/u02/trails
-      - ./gg_jars:/u02/jars
-      - ./gg_config:/u02/config
     networks:
       - gg_network
   # 1. Source Database: Oracle DB Free
