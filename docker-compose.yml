@@ -42,7 +42,7 @@ services:
   gg-capture:
     # Does not work with free
 #    image: container-registry.oracle.com/goldengate/goldengate-oracle-free:latest
-    image: container-registry.oracle.com/goldengate/goldengate-oracle:latest
+    image: container-registry.oracle.com/goldengate/goldengate-oracle@sha256:326a53fd6d762ad86779fc90d01c4aaca8bb8e5eac8c2c45dd81993a3ea7ecd8
     platform: linux/amd64
     container_name: gg-capture
     environment:
