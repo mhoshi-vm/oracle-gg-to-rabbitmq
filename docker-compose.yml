@@ -23,24 +23,45 @@ services:
     networks:
       - gg_network
 
-  # 3. CDC Engine: Oracle GoldenGate for Big Data
-  goldengate:
-    image: container-registry.oracle.com/goldengate/goldengate-distributed-apps-and-analytics:latest
-    container_name: gg-bigdata
+  # NEW: The Capture Engine (GoldenGate for Oracle Database)
+  gg-capture:
+    image: container-registry.oracle.com/goldengate/goldengate-free:latest
+    platform: linux/amd64
+    container_name: gg-capture
     environment:
-      - OGG_ADMIN_PWD=GgAdminPassword1!
+      - OGG_ADMIN=oggadmin
+      - OGG_ADMIN_PWD=Welcome#12345
     ports:
-      - "8080:8080"
-      - "8443:8443"
+      - "8444:8443" # Exposed on port 8444 to avoid conflict
     volumes:
-      # Mounting custom files to /u02 as requested by the new image standards
-      - ./gg_jars:/u02/jars
-      - ./gg_config:/u02/config
+      - shared_trails:/u02/trails # Shared folder to dump the trail files
     depends_on:
       - oracledb
+    networks:
+      - gg_network
+
+  # EXISTING: The Delivery Engine (GoldenGate for DAA / RabbitMQ)
+  gg-delivery:
+    image: container-registry.oracle.com/goldengate/goldengate-daa:latest
+    platform: linux/amd64
+    container_name: gg-daa
+    environment:
+      - OGG_ADMIN=oggadmin
+      - OGG_ADMIN_PWD=Welcome#12345
+    ports:
+      - "8443:8443" # Exposed on port 8443
+    volumes:
+      - ./gg_jars:/u02/jars
+      - ./gg_config:/u02/config
+      - shared_trails:/u02/trails # Shared folder to read the trail files
+    depends_on:
       - rabbitmq
     networks:
       - gg_network
+
+volumes:
+  # The bridge between the two GoldenGate containers
+  shared_trails:
 
 networks:
   gg_network:
