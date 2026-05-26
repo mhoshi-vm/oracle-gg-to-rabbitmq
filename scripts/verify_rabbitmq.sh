@@ -2,7 +2,6 @@
 # Verify CDC messages landed in RabbitMQ after running test_cdc.sql
 # Usage: ./scripts/verify_rabbitmq.sh
 
-RMQ="rabbitmq"
 USER="ggadmin"
 PASS="ggadmin123"
 BASE="http://localhost:15672/api"
@@ -16,7 +15,7 @@ bold() { printf '\033[1m%s\033[0m\n' "$*"; }
 sep
 bold "1. Queue depth: $QUEUE"
 sep
-COUNT=$(docker exec "$RMQ" curl -sf -u "$USER:$PASS" \
+COUNT=$(curl -sf -u "$USER:$PASS" \
   "$BASE/queues/%2F/$(python3 -c "import urllib.parse; print(urllib.parse.quote('$QUEUE'))" 2>/dev/null || echo "$QUEUE")/get" \
   -X POST -H "Content-Type: application/json" \
   -d "{\"count\":100,\"ackmode\":\"ack_requeue_true\",\"encoding\":\"auto\"}" \
@@ -30,7 +29,7 @@ echo "  Expected          : $EXPECTED"
 sep
 bold "2. Raw CDC payloads (non-destructive peek)"
 sep
-docker exec "$RMQ" curl -sf -u "$USER:$PASS" \
+curl -sf -u "$USER:$PASS" \
   -X POST "$BASE/queues/%2F/$QUEUE/get" \
   -H "Content-Type: application/json" \
   -d "{\"count\":$EXPECTED,\"ackmode\":\"ack_requeue_true\",\"encoding\":\"auto\"}" \
@@ -45,7 +44,7 @@ docker exec "$RMQ" curl -sf -u "$USER:$PASS" \
 sep
 bold "3. Operation type counts"
 sep
-docker exec "$RMQ" curl -sf -u "$USER:$PASS" \
+curl -sf -u "$USER:$PASS" \
   -X POST "$BASE/queues/%2F/$QUEUE/get" \
   -H "Content-Type: application/json" \
   -d "{\"count\":$EXPECTED,\"ackmode\":\"ack_requeue_true\",\"encoding\":\"auto\"}" \
