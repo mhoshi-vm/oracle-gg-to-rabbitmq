@@ -20,8 +20,14 @@ services:
       - ENABLE_ARCHIVELOG=true       # Automatically enable ArchiveLog mode
       - ENABLE_FORCE_LOGGING=true    # Automatically enable Force Logging
     volumes:
-      # Mount the setup script so it runs on initial DB creation
-      - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/setup/01_setup_cdc.sql
+      # Bind-mount a host directory (not a named volume) so Oracle initialises from
+      # scratch and runs setup/ scripts. Named volumes are pre-populated from the
+      # image, which makes runOracle.sh skip setup/ entirely (oracle/docker-images#2644).
+      # First boot takes ~10-15 min; subsequent starts are fast from the persisted files.
+      # - ./oracle_data:/opt/oracle/oradata
+      # - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/setup/01_setup_cdc.sql
+      # This is not designed for restarting oracledb, this is considered faster to start
+      - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/startup/01_setup_cdc.sql
     networks:
       - gg_network
 
