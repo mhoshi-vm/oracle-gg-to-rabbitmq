@@ -121,7 +121,11 @@ GoldenGate needs a stored credential to connect to the Oracle PDB.
    | User ID           | `ggadmin@oracledb:1521/FREEPDB1` |
    | Password          | `Welcome123##`                   |
 
+![img.png](screenshots/img.png)
+
 5. Click **Submit**.
+6. Click on **Actions** **Connect to DB:cdc_source**
+![img_1.png](screenshots/img_1.png)
 
 ---
 
@@ -132,13 +136,14 @@ This registers the schema with GoldenGate so it tracks any tables added in the f
 1. On the Configuration page, click the **Connect to database** icon next to `cdc_source`. The indicator should turn green.
 2. Scroll down to the **TRANDATA** section and click **+** (Add TRANDATA).
 3. In the **Schema** field enter `TESTUSER` and click **Submit**.
-
+![img_2.png](screenshots/img_2.png)
 ---
 
 ### 4. Create the Integrated Extract
 
-1. Open the hamburger menu → **Overview**.
+1. Open menu → **Extract**.
 2. Click **+** (Add Extract) → select **Integrated Extract** → click **Next**.
+![img_3.png](screenshots/img_3.png)
 3. Fill in the options:
 
    | Field             | Value              |
@@ -148,12 +153,14 @@ This registers the schema with GoldenGate so it tracks any tables added in the f
    | Sub Directory     | `/u02/trails`      |
    | Credential Domain | `OracleGoldenGate` |
    | Credential Alias  | `cdc_source`       |
+![img_4.png](screenshots/img_4.png)
 
 4. Click **Next** to reach the Parameter File screen.
 5. Append the following line at the bottom of the generated parameter file:
    ```
    TABLE testuser.employees;
    ```
+![img_5.png](screenshots/img_5.png)
 6. Click **Create and Run**.
 
 ---
@@ -175,7 +182,7 @@ EXIT;
 ```
 
 In the Admin UI, click **EXT_01** → **Statistics**. The insert should appear as a captured operation.
-
+![img_6.png](screenshots/img_6.png)
 ---
 
 ## Configure Oracle DAA
@@ -215,6 +222,7 @@ Open `https://localhost:8443` in your browser and bypass the self-signed certifi
 1. On the landing page, click **Administration Service**.
 2. Open the hamburger menu → **Overview**.
 3. Click **+** (Add Replicat) → select **Classic Replicat** → click **Next**.
+![img_7.png](screenshots/img_7.png)
 4. Fill in the options:
 
    | Field         | Value         |
@@ -224,16 +232,15 @@ Open `https://localhost:8443` in your browser and bypass the self-signed certifi
    | Sub Directory | `/u02/trails` |
 
    Choose `Generic (JMS)` and `JSON Operation Format`.
-
+![img_8.png](screenshots/img_8.png)
 5. Click **Next** to reach the Parameter File screen.
 6. Replace the generated content with the following:
 
    ```
-   REPLICAT REP_01
    TARGETDB LIBFILE libggjava.so SET property=/u02/config/rmq.props
    MAP testuser.employees, TARGET testuser.employees;
    ```
-
+![img_9.png](screenshots/img_9.png)
 7. Click **Create and Run**.
 
 ---

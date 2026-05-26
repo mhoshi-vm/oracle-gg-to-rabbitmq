@@ -7,7 +7,7 @@ gg.handler.jms.format.metaColumnsTemplate=${optype},${primarykeys}
 
 # Routing configurations
 gg.handler.jms.connectionFactory=RMQConnectionFactory
-gg.handler.jms.destinationTemplate=amq.topic
+gg.handler.jms.destinationTemplate=oracle.cdc
 
 # =================================================================
 # File System JNDI Properties
