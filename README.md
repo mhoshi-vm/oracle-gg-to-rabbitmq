@@ -41,6 +41,12 @@ The pipeline has two GoldenGate engines communicating via a shared volume of **t
 | `rabbitmq` | `rabbitmq:4.3-management` | Receives CDC events on `amq.topic`, streams to `MyStreamQueue` |
 | `init-trails-volume` | `alpine` | One-shot init that fixes shared volume permissions |
 
+## TL;DR
+
+The [testing](TESTING.md) results are in below
+
+- [Results](TESTING_RESULT.md)
+
 ---
 
 ## Technical decisions
