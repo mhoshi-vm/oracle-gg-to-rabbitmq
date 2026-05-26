@@ -32,7 +32,7 @@ services:
     ports:
       - "15672:15672" # Management UI
     volumes:
-      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./rabbitmq_config/enabled_plugins:/etc/rabbitmq/enabled_plugins
       - ./rabbitmq_config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
       - ./rabbitmq_config/definitions.json:/etc/rabbitmq/definitions.json
     networks:
