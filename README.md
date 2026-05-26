@@ -140,11 +140,12 @@ GoldenGate needs a stored credential to connect to the Oracle PDB.
 4. Fill in the fields:
 
    | Field             | Value                            |
-         |-------------------|----------------------------------|
+   |-------------------|----------------------------------|
    | Credential Domain | `OracleGoldenGate`               |
    | Credential Alias  | `cdc_source`                     |
    | User ID           | `ggadmin@oracledb:1521/FREEPDB1` |
    | Password          | `Welcome123##`                   |
+
 
 <details><summary>Screenshot</summary>
 
@@ -192,7 +193,7 @@ This registers the schema with GoldenGate so it tracks any tables added in the f
 3. Fill in the options:
 
 | Field             | Value              |
-   |-------------------|--------------------|
+|-------------------|--------------------|
 | Process Name      | `EXT_01`           |
 | Trail Name        | `lt`               |
 | Sub Directory     | `/u02/trails`      |
