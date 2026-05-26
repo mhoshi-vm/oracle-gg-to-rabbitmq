@@ -259,4 +259,7 @@ COMMIT;
 EXIT;
 ```
 
-The message count on `amq.topic` should increment, confirming the full pipeline is working.
+The message count on `jms.durable.queues` should increment, confirming the full pipeline is working.
+`oracle.cdc` queue will be binded to that exchange.
+
+![img.png](screenshots/img_10.png)
