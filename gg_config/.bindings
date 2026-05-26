@@ -17,14 +17,20 @@ RMQConnectionFactory/RefAddr/3/Type=uri
 RMQConnectionFactory/RefAddr/3/Encoding=String
 
 # ==========================================================
-# 2. Destination Object (Topic)
+# 2. Destination Object (Queue bound to amq.topic exchange)
+#
+# Must be javax.jms.Queue, NOT Topic.
+# The RabbitMQ JMS client always routes Topic publishes through
+# its own jms.durable.topic exchange regardless of the name.
+# Using Queue + amqpExchangeName bypasses that and publishes
+# directly to the amq.topic AMQP exchange.
 # ==========================================================
-amq.topic/ClassName=javax.jms.Topic
+amq.topic/ClassName=javax.jms.Queue
 amq.topic/FactoryName=com.rabbitmq.jms.admin.RMQObjectFactory
-amq.topic/RefAddr/0/Content=jms/Topic
+amq.topic/RefAddr/0/Content=jms/Queue
 amq.topic/RefAddr/0/Type=name
 amq.topic/RefAddr/0/Encoding=String
-amq.topic/RefAddr/1/Content=javax.jms.Topic
+amq.topic/RefAddr/1/Content=javax.jms.Queue
 amq.topic/RefAddr/1/Type=type
 amq.topic/RefAddr/1/Encoding=String
 amq.topic/RefAddr/2/Content=com.rabbitmq.jms.admin.RMQObjectFactory
@@ -33,3 +39,9 @@ amq.topic/RefAddr/2/Encoding=String
 amq.topic/RefAddr/3/Content=amq.topic
 amq.topic/RefAddr/3/Type=destinationName
 amq.topic/RefAddr/3/Encoding=String
+amq.topic/RefAddr/4/Content=amq.topic
+amq.topic/RefAddr/4/Type=amqpExchangeName
+amq.topic/RefAddr/4/Encoding=String
+amq.topic/RefAddr/5/Content=oracle.cdc
+amq.topic/RefAddr/5/Type=amqpRoutingKey
+amq.topic/RefAddr/5/Encoding=String

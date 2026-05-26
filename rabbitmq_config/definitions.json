@@ -26,6 +26,13 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {"x-queue-type": "stream"}
+    },
+    {
+      "name": "MyQuorumQueue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {"x-queue-type": "quorum"}
     }
   ],
   "bindings": [
@@ -34,7 +41,15 @@
       "vhost": "/",
       "destination": "MyStreamQueue",
       "destination_type": "queue",
-      "routing_key": "#",
+      "routing_key": "oracle.cdc",
+      "arguments": {}
+    },
+    {
+      "source": "amq.topic",
+      "vhost": "/",
+      "destination": "MyQuorumQueue",
+      "destination_type": "queue",
+      "routing_key": "oracle.cdc",
       "arguments": {}
     }
   ]

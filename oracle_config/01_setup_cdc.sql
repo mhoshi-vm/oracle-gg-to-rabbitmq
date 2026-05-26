@@ -22,7 +22,7 @@ ALTER SESSION SET CONTAINER = FREEPDB1;
 -- Ensure replication is explicitly enabled at the PDB level too
 ALTER SYSTEM SET ENABLE_GOLDENGATE_REPLICATION=TRUE SCOPE=BOTH;
 
--- Ensuer Minimum Supplemental Logging at the PDB level too
+-- Ensure Minimum Supplemental Logging at the PDB level too
 ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
 
 -- GoldenGate Admin Setup

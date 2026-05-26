@@ -21,7 +21,7 @@ services:
       - ENABLE_FORCE_LOGGING=true    # Automatically enable Force Logging
     volumes:
       # Mount the setup script so it runs on initial DB creation
-      - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/startup/01_setup_cdc.sql
+      - ./oracle_config/01_setup_cdc.sql:/opt/oracle/scripts/setup/01_setup_cdc.sql
     networks:
       - gg_network
 
@@ -38,7 +38,7 @@ services:
     networks:
       - gg_network
 
-  # NEW: The Capture Engine (GoldenGate for Oracle Database)
+  # The Capture Engine (GoldenGate for Oracle Database)
   gg-capture:
     # Does not work with free
 #    image: container-registry.oracle.com/goldengate/goldengate-oracle-free:latest
@@ -60,7 +60,7 @@ services:
     networks:
       - gg_network
 
-  # EXISTING: The Delivery Engine (GoldenGate for DAA / RabbitMQ)
+  # The Delivery Engine (GoldenGate for DAA / RabbitMQ)
   gg-delivery:
 #    image: container-registry.oracle.com/goldengate/goldengate-distributed-apps-and-analytics:latest
     image: container-registry.oracle.com/goldengate/goldengate-distributed-apps-and-analytics@sha256:4ef5c7eb0f57b49351624749d92e5267c79baab59fdd169a6d0256b3957f4503

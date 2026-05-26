@@ -1,10 +1,74 @@
-> **Note:** Only works on Linux. Uses commercial Oracle DAA — ensure no license violations before use.
+> **Note:** Only works on Linux. Uses commercial Oracle GoldenGate DAA — ensure no license violations before use.
 
 # Oracle GoldenGate to RabbitMQ
 
-Streams Oracle Database CDC events to RabbitMQ using two GoldenGate engines:
-- **gg-capture** — GoldenGate for Oracle (reads redo logs, writes trail files)
-- **gg-delivery** — GoldenGate DAA (reads trail files, publishes to RabbitMQ)
+A fully containerised CDC (Change Data Capture) pipeline that streams every INSERT, UPDATE, and DELETE from an Oracle 23ai database to a RabbitMQ exchange in real time, with no application-level code changes required.
+
+---
+
+## How it works
+
+```
+┌─────────────────────────┐     redo      ┌──────────────────────┐
+│   Oracle DB Free 23ai   │─────logs─────▶│  GoldenGate Capture  │
+│   (CDB / FREEPDB1 PDB)  │   (LogMiner)  │  goldengate-oracle   │
+└─────────────────────────┘               └──────────┬───────────┘
+                                                     │ trail files
+                                              shared Docker volume
+                                                     │
+                                          ┌──────────▼───────────┐
+                                          │  GoldenGate DAA      │
+                                          │  goldengate-daa      │
+                                          │  (JMS handler)       │
+                                          └──────────┬───────────┘
+                                                     │ AMQP / JMS
+                                          ┌──────────▼───────────┐
+                                          │  RabbitMQ 4.3        │
+                                          │  amq.topic exchange  │
+                                          │  MyStreamQueue       │
+                                          └──────────────────────┘
+```
+
+The pipeline has two GoldenGate engines communicating via a shared volume of **trail files** — a binary, sequenced log format native to GoldenGate. The trail file acts as a durable buffer: if RabbitMQ goes down, capture keeps running and delivery automatically resumes from its last checkpoint when RabbitMQ recovers.
+
+### Component responsibilities
+
+| Container | Image | Role |
+|---|---|---|
+| `oracledb` | `database/free` | Source Oracle 23ai (CDB + FREEPDB1 PDB) |
+| `gg-capture` | `goldengate-oracle` | Reads Oracle redo logs → writes trail files |
+| `gg-daa` | `goldengate-distributed-apps-and-analytics` | Reads trail files → publishes to RabbitMQ via JMS |
+| `rabbitmq` | `rabbitmq:4.3-management` | Receives CDC events on `amq.topic`, streams to `MyStreamQueue` |
+| `init-trails-volume` | `alpine` | One-shot init that fixes shared volume permissions |
+
+---
+
+## Technical decisions
+
+### Two GoldenGate engines, not one
+
+Oracle CDC from redo logs requires GoldenGate for Oracle, which is a separate product from GoldenGate DAA (Distributed Apps and Analytics). Splitting them is not just Docker convenience — it mirrors the real-world deployment pattern where capture runs close to the database and delivery runs close to the target system. The trail file boundary also means the two processes can be upgraded, restarted, or scaled independently.
+
+### Integrated Extract over Classic Extract
+
+The Extract is configured as **Integrated**, which uses Oracle's internal LogMiner infrastructure rather than reading redo logs directly. Integrated Extract is the required mode for Oracle 23ai CDB/PDB architectures — it registers with the database as a LogMiner capture server (`OGG$EXT_01` in `all_apply`) and receives change records from the kernel, giving it access to in-memory undo that Classic Extract cannot see.
+
+### Pinned image digests
+
+All four container images are pinned by SHA-256 digest rather than a floating tag. GoldenGate and Oracle image updates can change internal behaviour (parameter names, default paths, GGSCI syntax) in ways that aren't reflected in a changelog. Pinning makes the environment fully reproducible.
+
+### Commercial `goldengate-oracle`, not `goldengate-oracle-free`
+
+The free edition of GoldenGate for Oracle does not support Integrated Extract against a CDB. The commercial image is required. The free image reference is left commented in `docker-compose.yml` as a warning.
+
+### init-trails-volume container
+
+The `shared_trails` Docker volume is created with root ownership. GoldenGate runs as the `ogg` user (UID 54321) and cannot write trail files unless it owns the directory. A one-shot Alpine container runs `chown -R 54321:54321` before either GoldenGate container starts, using `depends_on: condition: service_completed_successfully` to enforce ordering.
+
+### File-system JNDI in rmq.props
+
+The JMS handler locates the RabbitMQ connection factory and destination via JNDI. Rather than maintaining a separate `jndi.properties` file, the JNDI bootstrap properties (`java.naming.factory.initial`, `java.naming.provider.url`) are embedded directly in `rmq.props`. The provider URL points to `file:/u02/config/` where the `.bindings` file lives, keeping all JMS configuration in one directory mount.
+
 
 ---
 
@@ -34,9 +98,9 @@ Wait until all four containers are healthy (`oracledb`, `rabbitmq`, `gg-capture`
 
 Open `https://localhost:8444` in your browser. The container uses a self-signed certificate, so bypass the browser warning (Advanced → Proceed).
 
-| Field    | Value          |
-|----------|----------------|
-| Username | `oggadmin`     |
+| Field    | Value           |
+|----------|-----------------|
+| Username | `oggadmin`      |
 | Password | `Welcome#12345` |
 
 ---
@@ -50,12 +114,12 @@ GoldenGate needs a stored credential to connect to the Oracle PDB.
 3. Under the **Database** tab, click **+** (Add Credential).
 4. Fill in the fields:
 
-   | Field               | Value                               |
-   |---------------------|-------------------------------------|
-   | Credential Domain   | `OracleGoldenGate`                  |
-   | Credential Alias    | `cdc_source`                        |
-   | User ID             | `ggadmin@oracledb:1521/FREEPDB1`    |
-   | Password            | `Welcome123##`                      |
+   | Field             | Value                            |
+   |-------------------|----------------------------------|
+   | Credential Domain | `OracleGoldenGate`               |
+   | Credential Alias  | `cdc_source`                     |
+   | User ID           | `ggadmin@oracledb:1521/FREEPDB1` |
+   | Password          | `Welcome123##`                   |
 
 5. Click **Submit**.
 
@@ -75,16 +139,15 @@ This registers the schema with GoldenGate so it tracks any tables added in the f
 
 1. Open the hamburger menu → **Overview**.
 2. Click **+** (Add Extract) → select **Integrated Extract** → click **Next**.
- Fill in the options:
+3. Fill in the options:
 
-   | Field               | Value                 |
-   |---------------------|-----------------------|
-   | Process Name        | `EXT_01`              |
-   | Trail Name          | `lt`                  |
-   | Sub Directory       | `/u02/trails`         |
-   | Credential Domain   | `OracleGoldenGate`    |
-   | Credential Alias    | `cdc_source`          |
-
+   | Field             | Value              |
+   |-------------------|--------------------|
+   | Process Name      | `EXT_01`           |
+   | Trail Name        | `lt`               |
+   | Sub Directory     | `/u02/trails`      |
+   | Credential Domain | `OracleGoldenGate` |
+   | Credential Alias  | `cdc_source`       |
 
 4. Click **Next** to reach the Parameter File screen.
 5. Append the following line at the bottom of the generated parameter file:
@@ -121,7 +184,7 @@ The DAA (Delivery) engine reads the trail files written by GG Capture and publis
 
 ### 1. Verify trail files are visible
 
-Before configuring the Replicat, confirm the trail files written by `gg-capture` are accessible inside the `gg-daa` container via the shared volume:
+Confirm the trail files written by `gg-capture` are accessible inside the `gg-daa` container via the shared volume:
 
 ```bash
 docker exec -it gg-daa ls -l /u02/trails
@@ -160,7 +223,7 @@ Open `https://localhost:8443` in your browser and bypass the self-signed certifi
    | Trail Name    | `lt`          |
    | Sub Directory | `/u02/trails` |
 
-Choose `Generic (JMS)` and `JSON Operation Format`
+   Choose `Generic (JMS)` and `JSON Operation Format`.
 
 5. Click **Next** to reach the Parameter File screen.
 6. Replace the generated content with the following:
