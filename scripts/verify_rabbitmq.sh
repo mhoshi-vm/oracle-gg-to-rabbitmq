@@ -6,7 +6,7 @@ USER="ggadmin"
 PASS="ggadmin123"
 BASE="http://localhost:15672/api"
 QUEUE="oracle.cdc"
-EXPECTED=2254   # 1000 I + 500 U + 500 D + (100 I + 100 U + 50 D) + (1 I + 2 U + 1 D)
+EXPECTED=100254  # 50000 I + 25000 U + 25000 D + (100 I + 100 U + 50 D) + (1 I + 2 U + 1 D)
 
 sep()  { echo "──────────────────────────────────────────"; }
 bold() { printf '\033[1m%s\033[0m\n' "$*"; }
@@ -100,7 +100,7 @@ bold "2. Operation type counts"
 sep
 python3 -c "$EXTRACT_PY" "$TMPFILE" ops
 echo ""
-echo "  Expected:   1101 I   602 U   551 D"
+echo "  Expected:   50101 I   25102 U   25051 D"
 
 # ── 3. Raw payloads (first 10 messages) ───────────────────────
 sep
@@ -136,9 +136,9 @@ python3 -c "$EXTRACT_PY" "$TMPFILE" check_order "9999" "I,U,U,D"
 
 # ── 5. Within-transaction order: emp_id 2000 (I → U → D) ──────
 sep
-bold "5. Within-transaction order: emp_id 2000 (Batch 4)"
+bold "5. Within-transaction order: emp_id 60000 (Batch 4)"
 sep
 echo "  INSERT, UPDATE, DELETE within one commit must preserve statement order"
-python3 -c "$EXTRACT_PY" "$TMPFILE" check_order "2000" "I,U,D"
+python3 -c "$EXTRACT_PY" "$TMPFILE" check_order "60000" "I,U,D"
 
 sep

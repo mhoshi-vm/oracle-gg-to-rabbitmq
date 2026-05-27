@@ -2,6 +2,8 @@
 
 Verifies the full pipeline: Oracle DML → GoldenGate Capture → trail files → GoldenGate DAA → RabbitMQ `oracle.cdc` queue.
 
+**Scale:** ~100 k events (100,254 total).
+
 ## Prerequisites
 
 The full stack must be running and both GoldenGate processes (EXT_01, REP_01) must be green before running these tests. See README.md for setup.
@@ -33,13 +35,13 @@ docker exec rabbitmq rabbitmqctl purge_queue oracle.cdc
 The script fires five batches of DML using PL/SQL loops for the heavy batches.
 
 | Batch | Operations | Events |
-|---|---|---|
-| 1 | 1000 INSERTs (emp_ids 1000–1999) | 1000 |
-| 2 | 500 UPDATEs (emp_ids 1000–1499) | 500 |
-| 3 | 500 DELETEs (emp_ids 1500–1999) | 500 |
-| 4 | 100 I + 100 U + 50 D (emp_ids 2000–2099, single transaction) | 250 |
-| 5 | I + U + U + D (emp_id 9999, four separate commits — order test) | 4 |
-| **Total** | | **2254** |
+|-------|------------|--------|
+| 1 | 50,000 INSERTs (emp_ids 1000–50999) | 50,000 |
+| 2 | 25,000 UPDATEs (emp_ids 1000–25999) | 25,000 |
+| 3 | 25,000 DELETEs (emp_ids 26000–50999) | 25,000 |
+| 4 | 100 I + 100 U + 50 D (emp_ids 60000–60099, single transaction) | 250 |
+| 5 | I + U + U + D (emp_id 99999, four separate commits — order test) | 4 |
+| **Total** | | **100,254** |
 
 ```bash
 docker exec -i oracledb sqlplus 'testuser/Welcome123##@//localhost:1521/FREEPDB1' \
@@ -51,7 +53,7 @@ Expected final row count (emp_ids ≥ 1000):
 ```
 remaining_rows
 --------------
-           550   -- 500 from Batch 2 (1000–1499) + 50 from Batch 4 (2050–2099)
+         25050   -- 25,000 from Batch 2 (1000–25999) + 50 from Batch 4 (60050–60099)
 ```
 
 ---
@@ -72,8 +74,8 @@ Counts messages and compares against the expected 2254.
 ──────────────────────────────────────────
 1. Queue depth: oracle.cdc
 ──────────────────────────────────────────
-  Messages in queue : 2254
-  Expected          : 2254
+  Messages in queue : 100254
+  Expected          : 100254
   Result            : PASS
 ```
 
@@ -82,9 +84,9 @@ Counts messages and compares against the expected 2254.
 Counts messages by `optype`. Expected output:
 
 ```
-    1101  I
-     602  U
-     551  D
+    50101  I
+    25102  U
+    25051  D
 ```
 
 ### Check 3 — Raw payloads (first 10)
@@ -117,7 +119,7 @@ Verifies that INSERT, UPDATE, and DELETE for emp_id 2000 — all within the sing
 ──────────────────────────────────────────
 5. Within-transaction order: emp_id 2000 (Batch 4)
 ──────────────────────────────────────────
-  pk=2000  actual=['I', 'U', 'D']  expected=['I', 'U', 'D']
+  pk=60000  actual=['I', 'U', 'D']  expected=['I', 'U', 'D']
   Result : PASS
 ```
 
