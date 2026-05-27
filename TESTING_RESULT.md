@@ -1,7 +1,6 @@
 # The below is the actual testing result
 
 ```
-$ ./scripts/verify_rabbitmq.sh
 ──────────────────────────────────────────
 1. Queue depth: oracle.cdc
 ──────────────────────────────────────────
@@ -19,6 +18,18 @@ $ ./scripts/verify_rabbitmq.sh
 ──────────────────────────────────────────
 3. Raw CDC payloads (first 10, non-destructive peek)
 ──────────────────────────────────────────
+  -- optype=D --
+{"optype":"D","primarykeys":"26000","before":{"EMP_ID":26000,"NAME":"Emp26000","DEPARTMENT":"Engineering","SALARY":310000}}
+---
+{"optype":"D","primarykeys":"26001","before":{"EMP_ID":26001,"NAME":"Emp26001","DEPARTMENT":"Marketing","SALARY":310010}}
+---
+{"optype":"D","primarykeys":"26002","before":{"EMP_ID":26002,"NAME":"Emp26002","DEPARTMENT":"Finance","SALARY":310020}}
+---
+{"optype":"D","primarykeys":"26003","before":{"EMP_ID":26003,"NAME":"Emp26003","DEPARTMENT":"Sales","SALARY":310030}}
+---
+{"optype":"D","primarykeys":"26004","before":{"EMP_ID":26004,"NAME":"Emp26004","DEPARTMENT":"HR","SALARY":310040}}
+---
+  -- optype=I --
 {"optype":"I","primarykeys":"1000","after":{"EMP_ID":1000,"NAME":"Emp1000","DEPARTMENT":"Engineering","SALARY":60000}}
 ---
 {"optype":"I","primarykeys":"1001","after":{"EMP_ID":1001,"NAME":"Emp1001","DEPARTMENT":"Marketing","SALARY":60010}}
@@ -29,15 +40,16 @@ $ ./scripts/verify_rabbitmq.sh
 ---
 {"optype":"I","primarykeys":"1004","after":{"EMP_ID":1004,"NAME":"Emp1004","DEPARTMENT":"HR","SALARY":60040}}
 ---
-{"optype":"I","primarykeys":"1005","after":{"EMP_ID":1005,"NAME":"Emp1005","DEPARTMENT":"Operations","SALARY":60050}}
+  -- optype=U --
+{"optype":"U","primarykeys":"1000","before":{"EMP_ID":1000,"NAME":"Emp1000","DEPARTMENT":"Engineering","SALARY":60000},"after":{"EMP_ID":1000,"SALARY":65000}}
 ---
-{"optype":"I","primarykeys":"1006","after":{"EMP_ID":1006,"NAME":"Emp1006","DEPARTMENT":"Legal","SALARY":60060}}
+{"optype":"U","primarykeys":"1001","before":{"EMP_ID":1001,"NAME":"Emp1001","DEPARTMENT":"Marketing","SALARY":60010},"after":{"EMP_ID":1001,"SALARY":65010}}
 ---
-{"optype":"I","primarykeys":"1007","after":{"EMP_ID":1007,"NAME":"Emp1007","DEPARTMENT":"IT","SALARY":60070}}
+{"optype":"U","primarykeys":"1002","before":{"EMP_ID":1002,"NAME":"Emp1002","DEPARTMENT":"Finance","SALARY":60020},"after":{"EMP_ID":1002,"SALARY":65020}}
 ---
-{"optype":"I","primarykeys":"1008","after":{"EMP_ID":1008,"NAME":"Emp1008","DEPARTMENT":"Support","SALARY":60080}}
+{"optype":"U","primarykeys":"1003","before":{"EMP_ID":1003,"NAME":"Emp1003","DEPARTMENT":"Sales","SALARY":60030},"after":{"EMP_ID":1003,"SALARY":65030}}
 ---
-{"optype":"I","primarykeys":"1009","after":{"EMP_ID":1009,"NAME":"Emp1009","DEPARTMENT":"Design","SALARY":60090}}
+{"optype":"U","primarykeys":"1004","before":{"EMP_ID":1004,"NAME":"Emp1004","DEPARTMENT":"HR","SALARY":60040},"after":{"EMP_ID":1004,"SALARY":65040}}
 ---
 ──────────────────────────────────────────
 4. Cross-transaction order: emp_id 99999
