@@ -34,7 +34,7 @@ def extract(msg):
     p = msg["payload"]
     if msg.get("payload_encoding") == "base64":
         raw = base64.b64decode(p)
-        idx = raw.find(b'{\x22')
+        idx = raw.find(b"\x7b\x22")
         return raw[idx:].decode("utf-8", errors="ignore") if idx >= 0 else None
     return p
 
