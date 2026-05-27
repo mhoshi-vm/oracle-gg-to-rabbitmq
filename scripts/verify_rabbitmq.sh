@@ -131,6 +131,7 @@ bold "3. Raw CDC payloads (first 10, non-destructive peek)"
 sep
 python3 - "$TMPFILE" <<'PYEOF'
 import sys, json, base64
+from collections import defaultdict
 
 def extract(msg):
     p = msg["payload"]
@@ -143,10 +144,25 @@ def extract(msg):
 with open(sys.argv[1]) as f:
     messages = json.load(f)
 
-for m in messages[:10]:
+samples = defaultdict(list)
+for m in messages:
     j = extract(m)
-    if j:
-        print(j)
+    if not j:
+        continue
+    try:
+        evt = json.loads(j)
+    except Exception:
+        continue
+    op = evt.get("optype", "?")
+    if len(samples[op]) < 5:
+        samples[op].append(j)
+    if all(len(v) >= 5 for v in samples.values()) and len(samples) >= 3:
+        break
+
+for op in sorted(samples):
+    print(f"  -- optype={op} --")
+    for payload in samples[op]:
+        print(payload)
         print("---")
 PYEOF
 
