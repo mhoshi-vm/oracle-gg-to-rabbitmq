@@ -1,45 +1,54 @@
 # The below is the actual testing result
 
 ```
-$ ./scripts/verify_rabbitmq.sh
 ──────────────────────────────────────────
 1. Queue depth: oracle.cdc
 ──────────────────────────────────────────
-  Messages in queue : 12
-  Expected          : 12
+  Messages in queue : 2254
+  Expected          : 2254
   Result            : PASS
 ──────────────────────────────────────────
-2. Raw CDC payloads (non-destructive peek)
+2. Operation type counts
 ──────────────────────────────────────────
-{"optype":"I","primarykeys":"2","after":{"EMP_ID":2,"NAME":"Bob","DEPARTMENT":"Marketing","SALARY":75000}}
+    551  D
+   1101  I
+    602  U
+
+  Expected:   1101 I   602 U   551 D
+──────────────────────────────────────────
+3. Raw CDC payloads (first 10, non-destructive peek)
+──────────────────────────────────────────
+{"optype":"I","primarykeys":"1000","after":{"EMP_ID":1000,"NAME":"Emp1000","DEPARTMENT":"Engineering","SALARY":60000}}
 ---
-{"optype":"I","primarykeys":"3","after":{"EMP_ID":3,"NAME":"Carol","DEPARTMENT":"Sales","SALARY":65000}}
+{"optype":"I","primarykeys":"1001","after":{"EMP_ID":1001,"NAME":"Emp1001","DEPARTMENT":"Marketing","SALARY":60010}}
 ---
-{"optype":"I","primarykeys":"10","after":{"EMP_ID":10,"NAME":"Bob","DEPARTMENT":"Engineering","SALARY":90000}}
+{"optype":"I","primarykeys":"1002","after":{"EMP_ID":1002,"NAME":"Emp1002","DEPARTMENT":"Finance","SALARY":60020}}
 ---
-{"optype":"I","primarykeys":"11","after":{"EMP_ID":11,"NAME":"Carol","DEPARTMENT":"Marketing","SALARY":72000}}
+{"optype":"I","primarykeys":"1003","after":{"EMP_ID":1003,"NAME":"Emp1003","DEPARTMENT":"Sales","SALARY":60030}}
 ---
-{"optype":"I","primarykeys":"12","after":{"EMP_ID":12,"NAME":"Dave","DEPARTMENT":"Finance","SALARY":68000}}
+{"optype":"I","primarykeys":"1004","after":{"EMP_ID":1004,"NAME":"Emp1004","DEPARTMENT":"HR","SALARY":60040}}
 ---
-{"optype":"I","primarykeys":"13","after":{"EMP_ID":13,"NAME":"Eve","DEPARTMENT":"Engineering","SALARY":95000}}
+{"optype":"I","primarykeys":"1005","after":{"EMP_ID":1005,"NAME":"Emp1005","DEPARTMENT":"Operations","SALARY":60050}}
 ---
-{"optype":"U","primarykeys":"10","before":{"EMP_ID":10,"NAME":"Bob","DEPARTMENT":"Engineering","SALARY":90000},"after":{"EMP_ID":10,"SALARY":96000}}
+{"optype":"I","primarykeys":"1006","after":{"EMP_ID":1006,"NAME":"Emp1006","DEPARTMENT":"Legal","SALARY":60060}}
 ---
-{"optype":"U","primarykeys":"11","before":{"EMP_ID":11,"NAME":"Carol","DEPARTMENT":"Marketing","SALARY":72000},"after":{"EMP_ID":11,"DEPARTMENT":"Product"}}
+{"optype":"I","primarykeys":"1007","after":{"EMP_ID":1007,"NAME":"Emp1007","DEPARTMENT":"IT","SALARY":60070}}
 ---
-{"optype":"U","primarykeys":"12","before":{"EMP_ID":12,"NAME":"Dave","DEPARTMENT":"Finance","SALARY":68000},"after":{"EMP_ID":12,"NAME":"David","SALARY":70000}}
+{"optype":"I","primarykeys":"1008","after":{"EMP_ID":1008,"NAME":"Emp1008","DEPARTMENT":"Support","SALARY":60080}}
 ---
-{"optype":"D","primarykeys":"13","before":{"EMP_ID":13,"NAME":"Eve","DEPARTMENT":"Engineering","SALARY":95000}}
----
-{"optype":"D","primarykeys":"12","before":{"EMP_ID":12,"NAME":"David","DEPARTMENT":"Finance","SALARY":70000}}
----
-{"optype":"I","primarykeys":"20","after":{"EMP_ID":20,"NAME":"Frank","DEPARTMENT":"Sales","SALARY":60000}}
+{"optype":"I","primarykeys":"1009","after":{"EMP_ID":1009,"NAME":"Emp1009","DEPARTMENT":"Design","SALARY":60090}}
 ---
 ──────────────────────────────────────────
-3. Operation type counts
+4. Cross-transaction order: emp_id 9999
 ──────────────────────────────────────────
-    2  D
-    7  I
-    3  U
+  Four separate commits must arrive in order: I → U → U → D
+  pk=9999  actual=['I', 'U', 'U', 'D']  expected=['I', 'U', 'U', 'D']
+  Result : PASS
+──────────────────────────────────────────
+5. Within-transaction order: emp_id 2000 (Batch 4)
+──────────────────────────────────────────
+  INSERT, UPDATE, DELETE within one commit must preserve statement order
+  pk=2000  actual=['I', 'U', 'D']  expected=['I', 'U', 'D']
+  Result : PASS
 ──────────────────────────────────────────
 ```
