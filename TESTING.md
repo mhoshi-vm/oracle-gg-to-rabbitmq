@@ -12,10 +12,6 @@ The full stack must be running and both GoldenGate processes (EXT_01, REP_01) mu
 
 Purge the queue and remove any leftover rows from previous runs:
 
-```
-docker exec rabbitmq rabbitmqctl purge_queue oracle.cdc
-```
-
 ```bash
 docker exec -i oracledb sqlplus 'testuser/Welcome123##@//localhost:1521/FREEPDB1' <<EOF
 DELETE FROM employees WHERE emp_id != 1;
@@ -23,6 +19,12 @@ COMMIT;
 EXIT;
 EOF
 ```
+
+```
+docker exec rabbitmq rabbitmqctl purge_queue oracle.cdc
+```
+
+
 
 ---
 
