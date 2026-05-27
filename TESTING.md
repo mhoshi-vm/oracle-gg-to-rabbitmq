@@ -8,107 +8,121 @@ The full stack must be running and both GoldenGate processes (EXT_01, REP_01) mu
 
 ---
 
+## Reset before each run
+
+Purge the queue and remove any leftover rows from previous runs:
+
+```
+docker exec rabbitmq rabbitmqctl purge_queue oracle.cdc
+```
+
+```bash
+docker exec -i oracledb sqlplus 'testuser/Welcome123##@//localhost:1521/FREEPDB1' <<EOF
+DELETE FROM employees WHERE emp_id != 1;
+COMMIT;
+EXIT;
+EOF
+```
+
+---
+
 ## Step 1 — Run the SQL test script
 
-The script fires four batches of DML covering every operation type.
+The script fires five batches of DML using PL/SQL loops for the heavy batches.
 
 | Batch | Operations | Events |
 |---|---|---|
-| 1 | 4 INSERTs | 4 |
-| 2 | 3 UPDATEs | 3 |
-| 3 | 2 DELETEs | 2 |
-| 4 | 1 INSERT + 1 UPDATE + 1 DELETE (single transaction) | 3 |
-| **Total** | | **12** |
-
-Run the script directly from the host by piping it into sqlplus via stdin (`-i`, no `-t`):
+| 1 | 1000 INSERTs (emp_ids 1000–1999) | 1000 |
+| 2 | 500 UPDATEs (emp_ids 1000–1499) | 500 |
+| 3 | 500 DELETEs (emp_ids 1500–1999) | 500 |
+| 4 | 100 I + 100 U + 50 D (emp_ids 2000–2099, single transaction) | 250 |
+| 5 | I + U + U + D (emp_id 9999, four separate commits — order test) | 4 |
+| **Total** | | **2254** |
 
 ```bash
 docker exec -i oracledb sqlplus 'testuser/Welcome123##@//localhost:1521/FREEPDB1' \
   < scripts/test_cdc.sql
 ```
 
-Expected final table state (3 rows):
+Expected final row count (emp_ids ≥ 1000):
 
-```bash
-docker exec -i oracledb sqlplus 'testuser/Welcome123##@//localhost:1521/FREEPDB1' \
-  <<< "SELECT emp_id, name, department, salary FROM employees ORDER BY emp_id;"
 ```
-
-| EMP_ID | NAME  | DEPARTMENT | SALARY |
-|--------|-------|------------|--------|
-| 1      | Alice | Engineering | 85000 |
-| 11     | Carol | Product     | 72000 |
-| 20     | Frank | Sales       | 61000 |
+remaining_rows
+--------------
+           550   -- 500 from Batch 2 (1000–1499) + 50 from Batch 4 (2050–2099)
+```
 
 ---
 
 ## Step 2 — Verify messages in RabbitMQ
 
-Run the verification script from the project root:
-
 ```bash
 ./scripts/verify_rabbitmq.sh
 ```
 
-The script connects to the RabbitMQ Management API inside the container (no host port required) and performs three checks against the `oracle.cdc` queue.
+The script performs five checks against the `oracle.cdc` queue using the RabbitMQ Management API (`ack_requeue_true` — messages are peeked, not consumed).
 
 ### Check 1 — Queue depth
 
-Counts messages in `oracle.cdc` and compares against the expected 12.
+Counts messages and compares against the expected 2254.
 
 ```
 ──────────────────────────────────────────
-Queue depth: oracle.cdc
+1. Queue depth: oracle.cdc
 ──────────────────────────────────────────
-  Messages in queue : 12
-  Expected          : 12
+  Messages in queue : 2254
+  Expected          : 2254
   Result            : PASS
 ```
 
-### Check 2 — Raw payloads
+### Check 2 — Operation type breakdown
 
-Prints each CDC message body as JSON. Each message contains the full row and operation metadata. Example INSERT payload:
+Counts messages by `optype`. Expected output:
+
+```
+    1101  I
+     602  U
+     551  D
+```
+
+### Check 3 — Raw payloads (first 10)
+
+Prints the first 10 CDC message bodies as JSON for spot-checking. Example INSERT:
 
 ```json
-{"table":"TESTUSER.EMPLOYEES","op_type":"I","op_ts":"2026-05-26T04:31:23.000000","current_ts":"...","pos":"...","primary_keys":["EMP_ID"],"tokens":{"op_type":"I","primary_keys":"EMP_ID"},"before":null,"after":{"EMP_ID":10,"NAME":"Bob","DEPARTMENT":"Engineering","SALARY":90000}}
+{"optype":"I","primarykeys":"1000","after":{"EMP_ID":1000,"NAME":"Emp1000","DEPARTMENT":"Engineering","SALARY":60000}}
 ```
 
-### Check 3 — Operation type breakdown
+### Check 4 — Cross-transaction order: emp_id 9999
 
-Counts messages by `op_type`. Expected output:
+Verifies that the four separate commits for emp_id 9999 (Batch 5) arrive in the correct order.
 
 ```
-  4 I
-  3 U
-  5 D
+──────────────────────────────────────────
+4. Cross-transaction order: emp_id 9999
+──────────────────────────────────────────
+  pk=9999  actual=['I', 'U', 'U', 'D']  expected=['I', 'U', 'U', 'D']
+  Result : PASS
 ```
 
-> All checks use `ack_requeue_true` — messages are peeked, not consumed, so the queue depth is unchanged after verification.
+A FAIL here means GoldenGate or RabbitMQ reordered events across commit boundaries.
+
+### Check 5 — Within-transaction order: emp_id 2000
+
+Verifies that INSERT, UPDATE, and DELETE for emp_id 2000 — all within the single Batch 4 commit — arrive in statement-execution order.
+
+```
+──────────────────────────────────────────
+5. Within-transaction order: emp_id 2000 (Batch 4)
+──────────────────────────────────────────
+  pk=2000  actual=['I', 'U', 'D']  expected=['I', 'U', 'D']
+  Result : PASS
+```
+
+A FAIL here means within-transaction event ordering is not preserved.
 
 ---
 
 ## Manual inspection via RabbitMQ Management UI
 
 Open `http://localhost:15672` (ggadmin / ggadmin123) and navigate to **Queues** → `oracle.cdc`. The **Get Messages** panel lets you inspect individual payloads interactively.
-
----
-
-## Resetting between test runs
-
-To clear the queue and reset the table for a clean re-run:
-
-```bash
-# Purge the oracle.cdc queue
-docker exec rabbitmq rabbitmqadmin purge queue name=oracle.cdc \
-  -u ggadmin -p ggadmin123
-```
-
-```bash
-# Reset the employees table in Oracle
-docker exec -it oracledb sqlplus 'testuser/Welcome123##@//localhost:1521/FREEPDB1'
-```
-
-```sql
-DELETE FROM employees WHERE emp_id != 1;
-COMMIT;
-```
