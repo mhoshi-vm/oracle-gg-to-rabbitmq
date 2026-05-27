@@ -4,25 +4,48 @@
 
 USER="ggadmin"
 PASS="ggadmin123"
-BASE="http://localhost:15672/api"
+HOST="localhost"
+PORT=5672
 QUEUE="oracle.cdc"
 EXPECTED=100254  # 50000 I + 25000 U + 25000 D + (100 I + 100 U + 50 D) + (1 I + 2 U + 1 D)
 
 sep()  { echo "──────────────────────────────────────────"; }
 bold() { printf '\033[1m%s\033[0m\n' "$*"; }
 
-# Fetch all messages into a temp file to avoid ARG_MAX limits on large payloads.
+python3 -c "import pika" 2>/dev/null || { echo "pika not installed: pip3 install pika"; exit 1; }
+
+# Consume all messages via AMQP without acknowledging them.
+# Closing the connection automatically requeues all unacked messages.
 TMPFILE=$(mktemp)
 trap 'rm -f "$TMPFILE"' EXIT
 
-curl -sf -u "$USER:$PASS" \
-  -X POST "$BASE/queues/%2F/$QUEUE/get" \
-  -H "Content-Type: application/json" \
-  -d "{\"count\":$EXPECTED,\"ackmode\":\"ack_requeue_true\",\"encoding\":\"auto\"}" \
-  > "$TMPFILE"
+python3 - "$HOST" "$PORT" "$USER" "$PASS" "$QUEUE" "$TMPFILE" <<'FETCH_PY'
+import sys, json, base64, pika
+
+host, port, user, passwd, queue, outfile = sys.argv[1:]
+creds = pika.PlainCredentials(user, passwd)
+conn  = pika.BlockingConnection(
+    pika.ConnectionParameters(host=host, port=int(port), credentials=creds))
+ch = conn.channel()
+
+bodies = []
+for method, _, body in ch.consume(queue, auto_ack=False, inactivity_timeout=10):
+    if method is None:
+        break  # no new messages for 10 s — queue drained
+    bodies.append(body)
+
+ch.cancel()
+conn.close()  # unacked messages are automatically requeued by the broker
+
+with open(outfile, "w") as f:
+    json.dump(
+        [{"payload": base64.b64encode(b).decode(), "payload_encoding": "base64"}
+         for b in bodies],
+        f)
+FETCH_PY
 
 # Messages are Java-serialised JMS TextMessage blobs (base64).
-# The CDC JSON is embedded at the end of each binary after the first '{'.
+# The CDC JSON starts at the first `{"` sequence inside the binary.
 EXTRACT_PY='
 import sys, json, base64
 
@@ -127,14 +150,14 @@ for m in messages[:10]:
         print("---")
 PYEOF
 
-# ── 4. Cross-transaction order: emp_id 9999 (I → U → U → D) ───
+# ── 4. Cross-transaction order: emp_id 99999 (I → U → U → D) ──
 sep
-bold "4. Cross-transaction order: emp_id 9999"
+bold "4. Cross-transaction order: emp_id 99999"
 sep
 echo "  Four separate commits must arrive in order: I → U → U → D"
-python3 -c "$EXTRACT_PY" "$TMPFILE" check_order "9999" "I,U,U,D"
+python3 -c "$EXTRACT_PY" "$TMPFILE" check_order "99999" "I,U,U,D"
 
-# ── 5. Within-transaction order: emp_id 2000 (I → U → D) ──────
+# ── 5. Within-transaction order: emp_id 60000 (Batch 4) ────────
 sep
 bold "5. Within-transaction order: emp_id 60000 (Batch 4)"
 sep
