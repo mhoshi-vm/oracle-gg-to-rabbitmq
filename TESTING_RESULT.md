@@ -1,20 +1,21 @@
 # The below is the actual testing result
 
 ```
+$ ./scripts/verify_rabbitmq.sh
 ──────────────────────────────────────────
 1. Queue depth: oracle.cdc
 ──────────────────────────────────────────
-  Messages in queue : 2254
-  Expected          : 2254
+  Messages in queue : 100254
+  Expected          : 100254
   Result            : PASS
 ──────────────────────────────────────────
 2. Operation type counts
 ──────────────────────────────────────────
-    551  D
-   1101  I
-    602  U
+  25051  D
+  50101  I
+  25102  U
 
-  Expected:   1101 I   602 U   551 D
+  Expected:   50101 I   25102 U   25051 D
 ──────────────────────────────────────────
 3. Raw CDC payloads (first 10, non-destructive peek)
 ──────────────────────────────────────────
@@ -39,16 +40,16 @@
 {"optype":"I","primarykeys":"1009","after":{"EMP_ID":1009,"NAME":"Emp1009","DEPARTMENT":"Design","SALARY":60090}}
 ---
 ──────────────────────────────────────────
-4. Cross-transaction order: emp_id 9999
+4. Cross-transaction order: emp_id 99999
 ──────────────────────────────────────────
   Four separate commits must arrive in order: I → U → U → D
-  pk=9999  actual=['I', 'U', 'U', 'D']  expected=['I', 'U', 'U', 'D']
+  pk=99999  actual=['I', 'U', 'U', 'D']  expected=['I', 'U', 'U', 'D']
   Result : PASS
 ──────────────────────────────────────────
-5. Within-transaction order: emp_id 2000 (Batch 4)
+5. Within-transaction order: emp_id 60000 (Batch 4)
 ──────────────────────────────────────────
   INSERT, UPDATE, DELETE within one commit must preserve statement order
-  pk=2000  actual=['I', 'U', 'D']  expected=['I', 'U', 'D']
+  pk=60000  actual=['I', 'U', 'D']  expected=['I', 'U', 'D']
   Result : PASS
 ──────────────────────────────────────────
 ```
